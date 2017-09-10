@@ -37,18 +37,19 @@ namespace SfxPerf
             StringBuilder result = new StringBuilder();
             while (true)
             {
-
-                result.Clear();
-                result.AppendLine("************************************************************");
-                result.AppendLine("时间:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                GetSystemInfo(result);
-                GetIIS(result);
-                GetSqlServer(result);
-                GetNetwork(result);
-                result.AppendLine("************************************************************");
-                Console.WriteLine(result.ToString());
-                File.AppendAllText("sfxperf.txt", result.ToString());
-                Thread.Sleep(1000);
+                
+                    result.Clear();
+                    result.AppendLine("************************************************************");
+                    result.AppendLine("时间:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    GetSystemInfo(result);
+                    GetIIS(result);
+                    GetSqlServer(result);
+                    GetNetwork(result);
+                    result.AppendLine("************************************************************");
+                    Console.WriteLine(result.ToString());
+                    File.AppendAllText("sfxperf.txt", result.ToString());
+                    Thread.Sleep(1000);
+               
             }
 
 
@@ -108,7 +109,11 @@ namespace SfxPerf
                 }
                 if (PerformanceCounterCategory.Exists("SQLServer:Locks") && PerformanceCounterCategory.CounterExists("Lock Waits/sec", "SQLServer:Locks"))
                 {
-                    LockWaitsSec = new PerformanceCounter("SQLServer:Locks", "Lock Waits/sec", "_Total");
+                    if (PerformanceCounterCategory.InstanceExists("_Total", "SQLServer:Locks"))
+                    {
+                        LockWaitsSec = new PerformanceCounter("SQLServer:Locks", "Lock Waits/sec", "_Total");
+                    }
+
                 }
                 if (PerformanceCounterCategory.Exists("SQLServer:General Statistics") && PerformanceCounterCategory.CounterExists("Processes blocked", "SQLServer:General Statistics"))
                 {
@@ -132,7 +137,7 @@ namespace SfxPerf
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + ex.StackTrace);
+                Console.WriteLine("init失败"+ex.Message + ex.StackTrace);
             }
         }
         static void GetSystemInfo(StringBuilder result)
@@ -165,7 +170,13 @@ namespace SfxPerf
         }
         static void GetSqlServer(StringBuilder result)
         {
+            if(LockWaitsSec == null)
+            {
+                result.AppendLine("====无数据库服务====");
+                return;
+            }
             result.AppendLine("=======数据库=========");
+            
             if (BufferCacheHitRatio != null)
             {
                 result.AppendLine("BufferCacheHitRatio: " + BufferCacheHitRatio.NextValue() + "%");
