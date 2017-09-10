@@ -79,71 +79,78 @@ namespace SfxPerf
                     CheckpointPagesSec = new PerformanceCounter("SQLServer:Buffer Manager", "Checkpoint Pages/Sec");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message+ex.StackTrace);
+                Console.WriteLine(ex.Message + ex.StackTrace);
             }
+            StringBuilder result = new StringBuilder();
             while (true)
             {
+
+                result.Clear();
                 Thread.Sleep(1000);
-                Console.WriteLine("00.基本信息************************************************************");
+
+                result.AppendLine("************************************************************");
+                result.AppendLine("时间:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 if (cpu != null)
                 {
-                    Console.WriteLine("CPU: " + cpu.NextValue() + "%");
+                    result.AppendLine("CPU: " + cpu.NextValue() + "%");
                 }
                 if (memory != null)
                 {
-                    Console.WriteLine("Memory: " + memory.NextValue() + "M");
+                    result.AppendLine("Memory: " + memory.NextValue() + "M");
                 }
                 if (cFree != null)
                 {
-                    Console.WriteLine("C盘剩余空间率: " + cFree.NextValue() + "%");
+                    result.AppendLine("C盘剩余空间率: " + cFree.NextValue() + "%");
                 }
-                Console.WriteLine("01.数据库 ************************************************************");
+                result.AppendLine("01.数据库");
                 if (BufferCacheHitRatio != null)
                 {
-                    Console.WriteLine("BufferCacheHitRatio: " + BufferCacheHitRatio.NextValue() + "%");
+                    result.AppendLine("BufferCacheHitRatio: " + BufferCacheHitRatio.NextValue() + "%");
                 }
                 if (PageLifeExpectancy != null)
                 {
-                    Console.WriteLine("PageLifeExpectancy: " + PageLifeExpectancy.NextValue() );
+                    result.AppendLine("PageLifeExpectancy:{0}，低于300（或5分钟），说明我们的服务器内存不足 " + PageLifeExpectancy.NextValue());
                 }
                 if (BatchRequestsSec != null)
                 {
-                    Console.WriteLine("BatchRequestsSec: " + BatchRequestsSec.NextValue());
+                    result.AppendLine("BatchRequestsSec: " + BatchRequestsSec.NextValue());
                 }
-               
-                if (SQLCompilationsSec !=null )
+
+                if (SQLCompilationsSec != null)
                 {
-                    Console.WriteLine("SQLCompilationsSec: " + SQLCompilationsSec.NextValue());
+                    result.AppendLine("SQLCompilationsSec: " + SQLCompilationsSec.NextValue());
                 }
-                if (ReCompilationsSec !=null)
+                if (ReCompilationsSec != null)
                 {
-                    Console.WriteLine("ReCompilationsSec: " + ReCompilationsSec.NextValue());
+                    result.AppendLine("ReCompilationsSec: " + ReCompilationsSec.NextValue());
                 }
-                if (UserConnections!=null)
+                if (UserConnections != null)
                 {
-                    Console.WriteLine("UserConnections: " + UserConnections.NextValue());
+                    result.AppendLine("UserConnections: " + UserConnections.NextValue());
                 }
-                if (LockWaitsSec!=null)
+                if (LockWaitsSec != null)
                 {
-                    Console.WriteLine("LockWaitsSec: " + LockWaitsSec.NextValue());
+                    result.AppendLine("LockWaitsSec: " + LockWaitsSec.NextValue());
                 }
-                if (ProcessesBlocked!=null)
+                if (ProcessesBlocked != null)
                 {
-                    Console.WriteLine("ProcessesBlocked: " + ProcessesBlocked.NextValue());
+                    result.AppendLine("ProcessesBlocked: " + ProcessesBlocked.NextValue());
                 }
-                if(CheckpointPagesSec != null)
+                if (CheckpointPagesSec != null)
                 {
-                    Console.WriteLine("CheckpointPagesSec: " + CheckpointPagesSec.NextValue());
+                    result.AppendLine("CheckpointPagesSec: " + CheckpointPagesSec.NextValue());
                 }
-                Console.WriteLine("00.基本信息************************************************************");
+                result.AppendLine("************************************************************");
+                Console.WriteLine(result.ToString());
+                File.AppendAllText("sfxperf.txt", result.ToString());
             }
-            
-            
-            
+
+
+
         }
-        
+
         public static string GetInstanceName(string categoryName, string counterName, Process p)
         {
             try
@@ -185,7 +192,7 @@ namespace SfxPerf
         }
         static void GetCpu()
         {
-           
+
 
         }
         static void GetAll()
@@ -235,6 +242,6 @@ namespace SfxPerf
 
 
         }
-        
+
     }
 }
