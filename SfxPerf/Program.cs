@@ -11,23 +11,51 @@ namespace SfxPerf
 {
     class Program
     {
+        static PerformanceCounter cpu = null;
+        static PerformanceCounter memory = null;
+        static PerformanceCounter cFree = null;
+        static PerformanceCounter AvgDiskQueueLength = null;
+        static PerformanceCounter CurrentDiskQueueLength = null;
+        static PerformanceCounter AvgDiskSecTransfer = null;
+        static PerformanceCounter BufferCacheHitRatio = null;
+        static PerformanceCounter PageLifeExpectancy = null;
+        static PerformanceCounter BatchRequestsSec = null;
+        static PerformanceCounter SQLCompilationsSec = null;
+        static PerformanceCounter ReCompilationsSec = null;
+        static PerformanceCounter UserConnections = null;
+        static PerformanceCounter LockWaitsSec = null;
+        static PerformanceCounter ProcessesBlocked = null;
+        static PerformanceCounter CheckpointPagesSec = null;
+        //IIS
+        static PerformanceCounter iisCurrentConnections = null;
+        static PerformanceCounter tcpConnectionsEstablished = null;
         static void Main(string[] args)
         {
-            //GetAll();
-            //return;
-            PerformanceCounter cpu = null;
-            PerformanceCounter memory = null;
-            PerformanceCounter cFree = null;
-            PerformanceCounter BufferCacheHitRatio = null;
-            PerformanceCounter PageLifeExpectancy = null;
-            PerformanceCounter BatchRequestsSec = null;
-            PerformanceCounter SQLCompilationsSec = null;
-            PerformanceCounter ReCompilationsSec = null;
-            PerformanceCounter UserConnections = null;
-            PerformanceCounter LockWaitsSec = null;
-            PerformanceCounter ProcessesBlocked = null;
-            PerformanceCounter CheckpointPagesSec = null;
 
+            Console.WriteLine("开始搜集性能数据.....................");
+            init();
+            StringBuilder result = new StringBuilder();
+            while (true)
+            {
+
+                result.Clear();
+                result.AppendLine("************************************************************");
+                result.AppendLine("时间:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                GetSystemInfo(result);
+                GetIIS(result);
+                GetSqlServer(result);
+                GetNetwork(result);
+                result.AppendLine("************************************************************");
+                Console.WriteLine(result.ToString());
+                File.AppendAllText("sfxperf.txt", result.ToString());
+                Thread.Sleep(1000);
+            }
+
+
+
+        }
+        static void init()
+        {
             try
             {
                 if (PerformanceCounterCategory.Exists("Processor Information") && PerformanceCounterCategory.CounterExists("% Processor Time", "Processor Information"))
@@ -41,6 +69,18 @@ namespace SfxPerf
                 if (PerformanceCounterCategory.Exists("LogicalDisk") && PerformanceCounterCategory.CounterExists("% Free Space", "LogicalDisk"))
                 {
                     cFree = new PerformanceCounter("LogicalDisk", "% Free Space", "C:");
+                }
+                if (PerformanceCounterCategory.Exists("PhysicalDisk") && PerformanceCounterCategory.CounterExists("Avg. Disk Queue Length", "PhysicalDisk"))
+                {
+                    AvgDiskQueueLength = new PerformanceCounter("PhysicalDisk", "Avg. Disk Queue Length", "_Total");
+                }
+                if (PerformanceCounterCategory.Exists("PhysicalDisk") && PerformanceCounterCategory.CounterExists("Current Disk Queue Length", "PhysicalDisk"))
+                {
+                    CurrentDiskQueueLength = new PerformanceCounter("PhysicalDisk", "Current Disk Queue Length", "_Total");
+                }
+                if (PerformanceCounterCategory.Exists("PhysicalDisk") && PerformanceCounterCategory.CounterExists("Avg. Disk sec/Transfer", "PhysicalDisk"))
+                {
+                    AvgDiskSecTransfer = new PerformanceCounter("PhysicalDisk", "Avg. Disk sec/Transfer", "_Total");
                 }
                 if (PerformanceCounterCategory.Exists("SQLServer:Buffer Manager") && PerformanceCounterCategory.CounterExists("Buffer cache hit ratio", "SQLServer:Buffer Manager"))
                 {
@@ -78,79 +118,111 @@ namespace SfxPerf
                 {
                     CheckpointPagesSec = new PerformanceCounter("SQLServer:Buffer Manager", "Checkpoint Pages/Sec");
                 }
+                #region IIS
+                if (PerformanceCounterCategory.Exists("Web Service") && PerformanceCounterCategory.CounterExists("Current Connections", "Web Service"))
+                {
+                    iisCurrentConnections = new PerformanceCounter("Web Service", "Current Connections", "_Total");
+                }
+                #endregion
+                if (PerformanceCounterCategory.Exists("TCPv4") && PerformanceCounterCategory.CounterExists("Connections Established", "TCPv4"))
+                {
+                    tcpConnectionsEstablished = new PerformanceCounter("TCPv4", "Connections Established");
+                }
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + ex.StackTrace);
             }
-            StringBuilder result = new StringBuilder();
-            while (true)
+        }
+        static void GetSystemInfo(StringBuilder result)
+        {
+            result.AppendLine("=====系统基本信息======");
+            if (cpu != null)
             {
+                result.AppendLine("CPU: " + cpu.NextValue() + "%");
+            }
+            if (memory != null)
+            {
+                result.AppendLine("Memory: " + memory.NextValue() + "M");
+            }
+            if (cFree != null)
+            {
+                result.AppendLine("C盘剩余空间率: " + cFree.NextValue() + "%");
+            }
+            if(AvgDiskQueueLength != null)
+            {
+                result.AppendLine("AvgDiskQueueLength: " + AvgDiskQueueLength.NextValue()+ ",理想值队列长度	小于 2");
+            }
+            if(CurrentDiskQueueLength != null)
+            {
+                result.AppendLine("CurrentDiskQueueLength: " + CurrentDiskQueueLength.NextValue() + ",理想值队列长度	小于 2");
+            }
+            if (AvgDiskSecTransfer != null)
+            {
+                result.AppendLine("AvgDiskSecTransfer: " + AvgDiskSecTransfer.NextValue());
+            }
+        }
+        static void GetSqlServer(StringBuilder result)
+        {
+            result.AppendLine("=======数据库=========");
+            if (BufferCacheHitRatio != null)
+            {
+                result.AppendLine("BufferCacheHitRatio: " + BufferCacheHitRatio.NextValue() + "%");
+            }
+            if (PageLifeExpectancy != null)
+            {
+                result.AppendLine(string.Format("PageLifeExpectancy:{0}，低于300（或5分钟），说明我们的服务器内存不足 ", PageLifeExpectancy.NextValue()));
+            }
+            if (BatchRequestsSec != null)
+            {
+                result.AppendLine("BatchRequestsSec: " + BatchRequestsSec.NextValue());
+            }
 
-                result.Clear();
-                Thread.Sleep(1000);
+            if (SQLCompilationsSec != null)
+            {
+                result.AppendLine("SQLCompilationsSec: " + SQLCompilationsSec.NextValue());
+            }
+            if (ReCompilationsSec != null)
+            {
+                result.AppendLine("ReCompilationsSec: " + ReCompilationsSec.NextValue());
+            }
+            if (UserConnections != null)
+            {
+                result.AppendLine("UserConnections: " + UserConnections.NextValue());
+            }
+            if (LockWaitsSec != null)
+            {
+                result.AppendLine("LockWaitsSec: " + LockWaitsSec.NextValue() + ",要保持这个计数器为零或接近零。");
+            }
+            if (ProcessesBlocked != null)
+            {
+                result.AppendLine("ProcessesBlocked: " + ProcessesBlocked.NextValue());
+            }
+            if (CheckpointPagesSec != null)
+            {
+                result.AppendLine("CheckpointPagesSec: " + CheckpointPagesSec.NextValue());
+            }
+        }
+        static void GetIIS(StringBuilder result)
+        {
+            result.AppendLine("=========IIS===========");
+            if (iisCurrentConnections != null)
+            {
+                result.AppendLine("iisCurrentConnections: " + iisCurrentConnections.NextValue());
+            }
 
-                result.AppendLine("************************************************************");
-                result.AppendLine("时间:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                if (cpu != null)
-                {
-                    result.AppendLine("CPU: " + cpu.NextValue() + "%");
-                }
-                if (memory != null)
-                {
-                    result.AppendLine("Memory: " + memory.NextValue() + "M");
-                }
-                if (cFree != null)
-                {
-                    result.AppendLine("C盘剩余空间率: " + cFree.NextValue() + "%");
-                }
-                result.AppendLine("01.数据库");
-                if (BufferCacheHitRatio != null)
-                {
-                    result.AppendLine("BufferCacheHitRatio: " + BufferCacheHitRatio.NextValue() + "%");
-                }
-                if (PageLifeExpectancy != null)
-                {
-                    result.AppendLine("PageLifeExpectancy:{0}，低于300（或5分钟），说明我们的服务器内存不足 " + PageLifeExpectancy.NextValue());
-                }
-                if (BatchRequestsSec != null)
-                {
-                    result.AppendLine("BatchRequestsSec: " + BatchRequestsSec.NextValue());
-                }
-
-                if (SQLCompilationsSec != null)
-                {
-                    result.AppendLine("SQLCompilationsSec: " + SQLCompilationsSec.NextValue());
-                }
-                if (ReCompilationsSec != null)
-                {
-                    result.AppendLine("ReCompilationsSec: " + ReCompilationsSec.NextValue());
-                }
-                if (UserConnections != null)
-                {
-                    result.AppendLine("UserConnections: " + UserConnections.NextValue());
-                }
-                if (LockWaitsSec != null)
-                {
-                    result.AppendLine("LockWaitsSec: " + LockWaitsSec.NextValue());
-                }
-                if (ProcessesBlocked != null)
-                {
-                    result.AppendLine("ProcessesBlocked: " + ProcessesBlocked.NextValue());
-                }
-                if (CheckpointPagesSec != null)
-                {
-                    result.AppendLine("CheckpointPagesSec: " + CheckpointPagesSec.NextValue());
-                }
-                result.AppendLine("************************************************************");
-                Console.WriteLine(result.ToString());
-                File.AppendAllText("sfxperf.txt", result.ToString());
+        }
+        static void GetNetwork(StringBuilder result)
+        {
+            result.AppendLine("=====获取网络数据=====");
+            if (tcpConnectionsEstablished != null)
+            {
+                result.AppendLine("tcpConnectionsEstablished TCP建立的连接数: " + tcpConnectionsEstablished.NextValue());
             }
 
 
-
         }
-
         public static string GetInstanceName(string categoryName, string counterName, Process p)
         {
             try
