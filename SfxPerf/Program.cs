@@ -28,6 +28,8 @@ namespace SfxPerf
         static PerformanceCounter CheckpointPagesSec = null;
         //IIS
         static PerformanceCounter iisCurrentConnections = null;
+        static PerformanceCounter aspnetRequestsCurrent = null;
+        static PerformanceCounter aspnetRequestsQueued = null;
         static PerformanceCounter tcpConnectionsEstablished = null;
         static void Main(string[] args)
         {
@@ -128,6 +130,15 @@ namespace SfxPerf
                 {
                     iisCurrentConnections = new PerformanceCounter("Web Service", "Current Connections", "_Total");
                 }
+                if (PerformanceCounterCategory.Exists("ASP.NET") && PerformanceCounterCategory.CounterExists("Requests Current", "ASP.NET"))
+                {
+                    aspnetRequestsCurrent = new PerformanceCounter("ASP.NET", "Requests Current");
+                }
+                if (PerformanceCounterCategory.Exists("ASP.NET") && PerformanceCounterCategory.CounterExists("Requests Queued", "ASP.NET"))
+                {
+                    aspnetRequestsQueued = new PerformanceCounter("ASP.NET", "Requests Queued");
+                }
+                
                 #endregion
                 if (PerformanceCounterCategory.Exists("TCPv4") && PerformanceCounterCategory.CounterExists("Connections Established", "TCPv4"))
                 {
@@ -221,6 +232,14 @@ namespace SfxPerf
             if (iisCurrentConnections != null)
             {
                 result.AppendLine("iisCurrentConnections: " + iisCurrentConnections.NextValue());
+            }
+            if (aspnetRequestsCurrent != null)
+            {
+                result.AppendLine("aspnetRequestsCurrent: " + aspnetRequestsCurrent.NextValue());
+            }
+            if (aspnetRequestsQueued != null)
+            {
+                result.AppendLine("aspnetRequestsQueued: " + aspnetRequestsQueued.NextValue());
             }
 
         }
