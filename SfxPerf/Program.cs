@@ -15,6 +15,8 @@ namespace SfxPerf
         static PerformanceCounter memory = null;
         static PerformanceCounter cFree = null;
         static PerformanceCounter AvgDiskQueueLength = null;
+        static PerformanceCounter AvgDiskSecRead = null;
+        static PerformanceCounter AvgDiskSecWrite= null;
         static PerformanceCounter CurrentDiskQueueLength = null;
         static PerformanceCounter AvgDiskSecTransfer = null;
         static PerformanceCounter BufferCacheHitRatio = null;
@@ -76,6 +78,14 @@ namespace SfxPerf
                 if (PerformanceCounterCategory.Exists("PhysicalDisk") && PerformanceCounterCategory.CounterExists("Avg. Disk Queue Length", "PhysicalDisk"))
                 {
                     AvgDiskQueueLength = new PerformanceCounter("PhysicalDisk", "Avg. Disk Queue Length", "_Total");
+                }
+                if (PerformanceCounterCategory.Exists("PhysicalDisk") && PerformanceCounterCategory.CounterExists("Avg. Disk sec/Read", "PhysicalDisk"))
+                {
+                    AvgDiskSecRead = new PerformanceCounter("PhysicalDisk", "Avg. Disk sec/Read", "_Total");
+                }
+                if (PerformanceCounterCategory.Exists("PhysicalDisk") && PerformanceCounterCategory.CounterExists("Avg. Disk sec/Write", "PhysicalDisk"))
+                {
+                    AvgDiskSecWrite = new PerformanceCounter("PhysicalDisk", "Avg. Disk sec/Write", "_Total");
                 }
                 if (PerformanceCounterCategory.Exists("PhysicalDisk") && PerformanceCounterCategory.CounterExists("Current Disk Queue Length", "PhysicalDisk"))
                 {
@@ -177,6 +187,14 @@ namespace SfxPerf
             if (AvgDiskSecTransfer != null)
             {
                 result.AppendLine("AvgDiskSecTransfer: " + AvgDiskSecTransfer.NextValue());
+            }
+            if (AvgDiskSecRead != null)
+            {
+                result.AppendLine("AvgDiskSecRead: " + AvgDiskSecRead.NextValue()+ ",一般不要超过11～15ms");
+            }
+            if (AvgDiskSecWrite != null)
+            {
+                result.AppendLine("AvgDiskSecWrite: " + AvgDiskSecWrite.NextValue() + ",一般建议小于12ms");
             }
         }
         static void GetSqlServer(StringBuilder result)
