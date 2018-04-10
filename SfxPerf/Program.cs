@@ -189,12 +189,20 @@ namespace SfxPerf
                     {
                         if (nis.Count > 0)
                         {
-                            nics = nicCategory.GetCounters(nis[0].Replace("(","[").Replace(")","]").Replace("/","_"));
+                            var ins = nis[0].Replace("(", "[").Replace(")", "]").Replace("/", "_");
+                            if (PerformanceCounterCategory.InstanceExists(ins, "Network Interface"))
+                            {
+                                nics = nicCategory.GetCounters(ins);
+                            }
                         }
                     }
                     if (nis.Count > 1)
                     {
-                        nics2 = nicCategory.GetCounters(nis[1].Replace("(", "[").Replace(")", "]").Replace("/", "_"));
+                        var ins = nis[0].Replace("(", "[").Replace(")", "]").Replace("/", "_");
+                        if (PerformanceCounterCategory.InstanceExists(ins, "Network Interface"))
+                        {
+                            nics2 = nicCategory.GetCounters(ins);
+                        }
                     }
                 }
                 
@@ -318,21 +326,53 @@ namespace SfxPerf
             //{
             //    result.AppendLine("currentBideWith 当前带宽: " + currentBideWith.NextValue());
             //}
+            float total = 0;
+            float bideWith = 0;
             if (nics != null)
             {
+               
                 foreach (var c in nics)
                 {
                     //result.AppendLine(c.CounterHelp);
-                    result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                    if (c.CounterName == "Bytes Total/sec")
+                    {
+                        total = c.NextValue();
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + total.ToString("#"));
+
+                    }
+                    else if (c.CounterName == "Current Bandwidth")
+                    {
+                        bideWith = c.NextValue();
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + bideWith.ToString("#"));
+                    }
+                    else
+                    {
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                    }
                 }
+                result.AppendLine("网络使用率%:" + ((total*8)/bideWith)*100);
             }
             if (nics2 != null)
             {
                 foreach (var c in nics2)
                 {
-                    //result.AppendLine(c.CounterHelp);
-                    result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                    if (c.CounterName == "Bytes Total/sec")
+                    {
+                        total = c.NextValue();
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + total.ToString("#"));
+
+                    }
+                    else if (c.CounterName == "Current Bandwidth")
+                    {
+                        bideWith = c.NextValue();
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + bideWith.ToString("#"));
+                    }
+                    else
+                    {
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                    }
                 }
+                result.AppendLine("网络使用率%:" + ((total * 8) / bideWith)*100);
             }
 
 
