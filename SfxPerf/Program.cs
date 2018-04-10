@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 
@@ -32,7 +33,14 @@ namespace SfxPerf
         static PerformanceCounter iisCurrentConnections = null;
         static PerformanceCounter aspnetRequestsCurrent = null;
         static PerformanceCounter aspnetRequestsQueued = null;
+
+        //network
         static PerformanceCounter tcpConnectionsEstablished = null;
+        //第一个网卡
+        static PerformanceCounter[] nics = null;
+        //第二个网卡
+        static PerformanceCounter[] nics2 = null;
+
         static void Main(string[] args)
         {
 
@@ -41,7 +49,9 @@ namespace SfxPerf
             StringBuilder result = new StringBuilder();
             while (true)
             {
-                
+
+                try
+                {
                     result.Clear();
                     result.AppendLine("************************************************************");
                     result.AppendLine("时间:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -53,6 +63,11 @@ namespace SfxPerf
                     Console.WriteLine(result.ToString());
                     File.AppendAllText("sfxperf.txt", result.ToString());
                     Thread.Sleep(1000);
+                }catch(Exception ex)
+                {
+                    Console.WriteLine(ex.Message+ex.StackTrace);
+                    return;
+                }
                
             }
 
@@ -154,6 +169,35 @@ namespace SfxPerf
                 {
                     tcpConnectionsEstablished = new PerformanceCounter("TCPv4", "Connections Established");
                 }
+                if (PerformanceCounterCategory.Exists("Network Interface"))
+                {
+                    List<string> nis = new List<string>();
+                    NetworkInterface[] allNetworkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+                    for (int i = 0; i < allNetworkInterfaces.Length; i++)
+                    {
+                        NetworkInterface networkInterface = allNetworkInterfaces[i];
+                        if (networkInterface.OperationalStatus == OperationalStatus.Up
+                            && (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet
+                                ||networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                                )
+                        {
+                            nis.Add(networkInterface.Description);
+                        }
+                    }
+                    PerformanceCounterCategory nicCategory = new PerformanceCounterCategory("Network Interface");
+                    if (nicCategory != null)
+                    {
+                        if (nis.Count > 0)
+                        {
+                            nics = nicCategory.GetCounters(nis[0].Replace("(","[").Replace(")","]").Replace("/","_"));
+                        }
+                    }
+                    if (nis.Count > 1)
+                    {
+                        nics2 = nicCategory.GetCounters(nis[1].Replace("(", "[").Replace(")", "]").Replace("/", "_"));
+                    }
+                }
+                
 
             }
             catch (Exception ex)
@@ -263,14 +307,37 @@ namespace SfxPerf
         }
         static void GetNetwork(StringBuilder result)
         {
+         
+            
             result.AppendLine("=====获取网络数据=====");
             if (tcpConnectionsEstablished != null)
             {
                 result.AppendLine("tcpConnectionsEstablished TCP建立的连接数: " + tcpConnectionsEstablished.NextValue());
             }
+            //if (currentBideWith != null)
+            //{
+            //    result.AppendLine("currentBideWith 当前带宽: " + currentBideWith.NextValue());
+            //}
+            if (nics != null)
+            {
+                foreach (var c in nics)
+                {
+                    //result.AppendLine(c.CounterHelp);
+                    result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                }
+            }
+            if (nics2 != null)
+            {
+                foreach (var c in nics2)
+                {
+                    //result.AppendLine(c.CounterHelp);
+                    result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                }
+            }
 
 
         }
+        
         public static string GetInstanceName(string categoryName, string counterName, Process p)
         {
             try
