@@ -36,6 +36,10 @@ namespace SfxPerf
 
         //network
         static PerformanceCounter tcpConnectionsEstablished = null;
+        static PerformanceCounter ConnectionsActive = null;
+        static PerformanceCounter ConnectionsPassive = null;
+        static PerformanceCounter ConnectionsReset = null;
+        static PerformanceCounter ConnectionFailures = null;
         //第一个网卡
         static PerformanceCounter[] nics = null;
         //第二个网卡
@@ -168,6 +172,22 @@ namespace SfxPerf
                 if (PerformanceCounterCategory.Exists("TCPv4") && PerformanceCounterCategory.CounterExists("Connections Established", "TCPv4"))
                 {
                     tcpConnectionsEstablished = new PerformanceCounter("TCPv4", "Connections Established");
+                }
+                if (PerformanceCounterCategory.Exists("TCPv4") && PerformanceCounterCategory.CounterExists("Connections Active", "TCPv4"))
+                {
+                    ConnectionsActive = new PerformanceCounter("TCPv4", "Connections Active");
+                }
+                if (PerformanceCounterCategory.Exists("TCPv4") && PerformanceCounterCategory.CounterExists("Connections Passive", "TCPv4"))
+                {
+                    ConnectionsPassive = new PerformanceCounter("TCPv4", "Connections Passive");
+                }
+                if (PerformanceCounterCategory.Exists("TCPv4") && PerformanceCounterCategory.CounterExists("Connections Reset", "TCPv4"))
+                {
+                    ConnectionsReset = new PerformanceCounter("TCPv4", "Connections Reset");
+                }
+                if (PerformanceCounterCategory.Exists("TCPv4") && PerformanceCounterCategory.CounterExists("Connection Failures", "TCPv4"))
+                {
+                    ConnectionFailures = new PerformanceCounter("TCPv4", "Connection Failures");
                 }
                 if (PerformanceCounterCategory.Exists("Network Interface"))
                 {
@@ -322,6 +342,23 @@ namespace SfxPerf
             {
                 result.AppendLine("tcpConnectionsEstablished TCP建立的连接数: " + tcpConnectionsEstablished.NextValue());
             }
+            if (ConnectionsActive != null)
+            {
+                result.AppendLine("ConnectionsActive 请求建立，没有建立成功的TCP连接数量: " + ConnectionsActive.NextValue());
+            }
+            if (ConnectionsPassive != null)
+            {
+                result.AppendLine("ConnectionsPassive 接收而没有确认，没有建立成功的TCP连接数量: " + ConnectionsPassive.NextValue());
+            }
+            if (ConnectionsReset != null)
+            {
+                result.AppendLine("ConnectionsReset 重置的TCP连接数: " + ConnectionsReset.NextValue());
+            }
+            if (ConnectionFailures != null)
+            {
+                result.AppendLine("ConnectionFailures 失败的TCP连接数: " + ConnectionFailures.NextValue());
+            }
+            
             //if (currentBideWith != null)
             //{
             //    result.AppendLine("currentBideWith 当前带宽: " + currentBideWith.NextValue());
@@ -337,18 +374,18 @@ namespace SfxPerf
                     if (c.CounterName == "Bytes Total/sec")
                     {
                         total = c.NextValue();
-                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + total.ToString("#"));
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + total.ToString(""));
 
                     }
                     else if (c.CounterName == "Current Bandwidth")
                     {
                         bideWith = c.NextValue();
-                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + bideWith.ToString("#"));
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + bideWith.ToString(""));
                     }
-                    else
-                    {
-                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
-                    }
+                    //else
+                    //{
+                    //    result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                    //}
                 }
                 result.AppendLine("网络使用率%:" + ((total*8)/bideWith)*100);
             }
@@ -359,18 +396,18 @@ namespace SfxPerf
                     if (c.CounterName == "Bytes Total/sec")
                     {
                         total = c.NextValue();
-                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + total.ToString("#"));
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + total.ToString(""));
 
                     }
                     else if (c.CounterName == "Current Bandwidth")
                     {
                         bideWith = c.NextValue();
-                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + bideWith.ToString("#"));
+                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + bideWith.ToString(""));
                     }
-                    else
-                    {
-                        result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
-                    }
+                    //else
+                    //{
+                    //    result.AppendLine(c.CounterName + "(" + c.InstanceName + "):" + c.NextValue().ToString("#"));
+                    //}
                 }
                 result.AppendLine("网络使用率%:" + ((total * 8) / bideWith)*100);
             }
