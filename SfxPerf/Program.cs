@@ -55,45 +55,45 @@ namespace sfxcpu
             Console.WriteLine("开始搜集性能数据.....................");
             init();
             StringBuilder result = new StringBuilder();
+            //while (true)
+            //{
+
+            //    try
+            //    {
+            //        result.Clear();
+            //        result.AppendLine("************************************************************");
+
+            //        GetSystemInfo(result);
+            //        GetIIS(result);
+            //        GetSqlServer(result);
+            //        GetNetwork(result);
+
+            //        result.AppendLine("************************************************************");
+            //        Console.WriteLine(result.ToString());
+            //        File.AppendAllText("sfxperf.txt", result.ToString());
+            //        Thread.Sleep(1000);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Console.WriteLine(ex.Message + ex.StackTrace);
+            //        return;
+            //    }
+
+            //}
             while (true)
             {
-
                 try
                 {
-                    result.Clear();
-                    result.AppendLine("************************************************************");
 
-                    GetSystemInfo(result);
-                    GetIIS(result);
-                    GetSqlServer(result);
-                    GetNetwork(result);
-
-                    result.AppendLine("************************************************************");
-                    Console.WriteLine(result.ToString());
-                    File.AppendAllText("sfxperf.txt", result.ToString());
+                    GetAllCpu();
                     Thread.Sleep(1000);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message + ex.StackTrace);
-                    return;
+                    //File.AppendAllText("err.txt", ex.Message + ex.StackTrace);
                 }
-
             }
-            //while (true)
-            //{
-            //    try
-            //    {
-
-            //        GetAllCpu();
-            //        Thread.Sleep(1000);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //       // Console.WriteLine(ex.Message + ex.StackTrace);
-            //        //File.AppendAllText("err.txt", ex.Message + ex.StackTrace);
-            //    }
-            //}
 
 
         }
@@ -556,11 +556,12 @@ namespace sfxcpu
                         long KernelModeTime = Convert.ToInt64(managementObject["KernelModeTime"]);
                         string processName = managementObject["Name"].ToString();
                         string commandLine = managementObject["CommandLine"] == null ? "" : managementObject["CommandLine"].ToString();
+                        int memory = Convert.ToInt32(managementObject["WorkingSetSize"]) / 1024/1024;
                         StringBuilder result = new StringBuilder();
                         if (KernelModeTime > 0 && userModeTime > 0)
                         {
                             string percent = getCpuPercent(ProcessId);
-                            if (percent != "" && percent != "0")
+                            if (memory>100)
                             {
 
 
@@ -570,14 +571,12 @@ namespace sfxcpu
                                 result.Append("进程名称：").AppendLine(managementObject["Name"].ToString());
                                 result.Append("命令行：").AppendLine(commandLine);
                                 result.Append("CPU占用率:").Append(percent).AppendLine("%");
+                                result.Append("内存占用(MB):").Append(memory).AppendLine("MB");
                                 result.Append("**************************************************\r\n");
                                 Console.WriteLine(result.ToString());
-                                File.AppendAllText("sfxcpu.txt", result.ToString());
+                                File.AppendAllText("sfxperf.txt", result.ToString());
                             }
-                            else
-                            {
-                                Console.Write(".");
-                            }
+                           
                         }
 
 
